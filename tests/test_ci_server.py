@@ -3,6 +3,8 @@ import subprocess
 from unittest.mock import patch
 import sys
 import os
+import shutil
+
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../src")))
 
@@ -26,10 +28,24 @@ def test_handle_webhook(
     pass
 
 
-@pytest.mark.skip(reason="Feature not implemented yet")
 @patch("subprocess.run")
 def test_clone_repo(mock_subprocess):
-    pass
+    mock_subprocess.return_value = None
+
+    # Ensure that the clone directory does not exist already
+    if os.path.exists(CLONE_DIR):
+        shutil.rmtree(CLONE_DIR)
+
+    success = clone_repo()
+
+    assert success is True, "Cloning repo failed"
+    mock_subprocess.assert_called_once_with(
+        ["git", "clone", GITHUB_REPO_URL, CLONE_DIR], check=True
+    )
+
+    # Cleanup
+    if os.path.exists(CLONE_DIR):
+        shutil.rmtree(CLONE_DIR)
 
 
 @pytest.mark.skip(reason="Feature not implemented yet")
