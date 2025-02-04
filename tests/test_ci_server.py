@@ -30,22 +30,27 @@ def test_handle_webhook(
 
 @patch("subprocess.run")
 def test_clone_repo(mock_subprocess):
+    """Test that clone_repo correctly calls git clone"""
+    git_url = "https://github.com/Group-19-DD2480/Continuous-Integration-Server.git"
     mock_subprocess.return_value = None
 
-    # Ensure that the clone directory does not exist already
-    if os.path.exists(CLONE_DIR):
-        shutil.rmtree(CLONE_DIR)
+    repo_name = git_url.split("/")[-1].replace(".git", "")
+    repo_path = os.path.join(
+        CLONE_DIR, repo_name
+    )  # This is "/tmp/Continuous-Integration-Server"
 
-    success = clone_repo()
+    if os.path.exists(repo_path):
+        shutil.rmtree(repo_path, ignore_errors=True)
+
+    success = clone_repo(git_url=git_url)
 
     assert success is True, "Cloning repo failed"
     mock_subprocess.assert_called_once_with(
-        ["git", "clone", GITHUB_REPO_URL, CLONE_DIR], check=True
+        ["git", "clone", git_url], cwd=CLONE_DIR, check=True
     )
 
-    # Cleanup
-    if os.path.exists(CLONE_DIR):
-        shutil.rmtree(CLONE_DIR)
+    if os.path.exists(repo_path):
+        shutil.rmtree(repo_path, ignore_errors=True)
 
 
 @pytest.mark.skip(reason="Feature not implemented yet")
