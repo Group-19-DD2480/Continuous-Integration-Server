@@ -1,4 +1,5 @@
 from flask import Flask, request, jsonify
+import os
 import subprocess
 
 GITHUB_TOKEN = None
@@ -57,8 +58,46 @@ def clone_repo():
     pass
 
 
-def build_project():
-    pass
+def compile_files(files: list[str]) -> bool:
+    command = ["python3", "-m", "py_compile"]
+    command.extend(files)
+    try:
+        subprocess.run(command, check=True)
+        return True
+    except subprocess.CalledProcessError as e:
+        print(f"Syntax Check Failed: {e.stderr}")
+        return False
+
+
+def build_project(path) -> bool:
+    """
+    Fetches all python files in the directory given by path and runs a compile check on it. Return true if the check succeeds.
+    Parameters:
+        path: String representing the directory to be compiled.
+              A path to a file is considered a valid path and compilation will be run on the file
+              An empty directory is considered a valid path and program (returns True)
+    Returns:
+        bool: True if all python files within the path compile without errors.
+              False if any file compile with an error or the path does not exist.
+    """
+
+    if not os.path.exists(path):
+        return False
+
+    if os.path.isfile(path):
+        return compile_files([path])
+
+    if not os.listdir(path):
+        # Directory is Empty
+        return True
+
+    files = []
+    for dirpath, _, filenames in os.walk(path):
+        for file in filenames:
+            if file.endswith(".py"):
+                files.append(dirpath + "/" + file)
+
+    return compile_files(files)
 
 
 def run_tests():

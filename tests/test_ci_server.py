@@ -1,9 +1,10 @@
 import pytest
-import subprocess
 from unittest.mock import patch
 import sys
 import os
 import json
+
+from src.ci_server import build_project
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../src")))
 
@@ -130,10 +131,30 @@ def test_clone_repo(mock_subprocess):
     pass
 
 
-@pytest.mark.skip(reason="Feature not implemented yet")
-@patch("subprocess.run")
-def test_build_project(mock_subprocess):
-    pass
+# @pytest.fixture
+# @patch("subprocess.run")
+# def test_build_project(mock_subprocess):
+def test_build_project():
+
+    # Path to directory with valid files
+    valid_dir_path = "tests/test_dir/valid_dir"
+    assert build_project(valid_dir_path)
+
+    # Path to directory with some invalid files
+    invalid_dir_path = "tests/test_dir/invalid_dir"
+    assert not build_project(invalid_dir_path)
+
+    # Pass path to valid file as argument
+    file = "tests/test_dir/valid_dir/valid_file1.py"
+    assert build_project(file)
+
+    # Pass path to invalid file as argument
+    file = "tests/test_dir/invalid_dir/invalid_file.py"
+    assert not build_project(file)
+
+    # Pass empty directory as argument
+    path = "tests/test_dir/valid_dir/emptydir"
+    assert build_project(path)
 
 
 @pytest.mark.skip(reason="Feature not implemented yet")
