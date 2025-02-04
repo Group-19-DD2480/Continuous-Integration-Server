@@ -1,4 +1,5 @@
 from flask import Flask, request, jsonify
+import venv
 import os
 import subprocess
 
@@ -60,7 +61,8 @@ def clone_repo():
 
 def compile_files(files: list[str]) -> bool:
     try:
-        subprocess.run(["python3", "-m", "venv", "venv"])
+        venv_dir = os.path.join(os.path.expanduser("~"), ".venv")
+        venv.create(venv_dir)
         if os.path.exists("requirements.txt"):
             subprocess.run(["pip", "install", "-r", "requirements.txt"])
 
