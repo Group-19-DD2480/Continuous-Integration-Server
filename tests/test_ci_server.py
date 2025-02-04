@@ -3,6 +3,7 @@ from unittest.mock import patch
 import sys
 import os
 import json
+import tempfile
 
 from src.ci_server import build_project
 
@@ -135,26 +136,50 @@ def test_clone_repo(mock_subprocess):
 # @patch("subprocess.run")
 # def test_build_project(mock_subprocess):
 def test_build_project():
+    valid_python_program = 'print("Hello World")'
+    invalid_python_program = "printHello World)"
+    files = {"valid": [], "invalid": []}
+    valid_dir = tempfile.TemporaryDirectory()
+    invalid_dir = tempfile.TemporaryDirectory()
+
+    # valid file in valid directory
+    fd, valid_file1 = tempfile.mkstemp(suffix=".py", dir=valid_dir.name, text=True)
+    files["valid"].append({"fd": fd, "path": valid_file1})
+
+    # invalid file in invalid dir
+    fd, invalid_file1 = tempfile.mkstemp(suffix=".py", dir=invalid_dir.name, text=True)
+    files["invalid"].append({"fd": fd, "path": invalid_file1})
+
+    # valid file in invalid dir
+    fd, valid_file2 = tempfile.mkstemp(suffix=".py", dir=invalid_dir.name, text=True)
+    files["valid"].append({"fd": fd, "path": valid_file2})
+
+    for file in files["valid"]:
+        with open(file["path"], "w") as f:
+            f.write(valid_python_program + "\n")
+
+    for file in files["invalid"]:
+        with open(file["path"], "w") as f:
+            f.write(invalid_python_program)
 
     # Path to directory with valid files
-    valid_dir_path = "tests/test_dir/valid_dir"
-    assert build_project(valid_dir_path)
+    assert build_project(valid_dir.name)
 
-    # Path to directory with some invalid files
-    invalid_dir_path = "tests/test_dir/invalid_dir"
-    assert not build_project(invalid_dir_path)
+    # Path to directory with some invalid and valid files
+    assert not build_project(invalid_dir.name)
 
     # Pass path to valid file as argument
-    file = "tests/test_dir/valid_dir/valid_file1.py"
-    assert build_project(file)
+    assert build_project(files["valid"][0]["path"])
 
     # Pass path to invalid file as argument
-    file = "tests/test_dir/invalid_dir/invalid_file.py"
-    assert not build_project(file)
+    assert not build_project(files["invalid"][0]["path"])
 
     # Pass empty directory as argument
-    path = "tests/test_dir/valid_dir/emptydir"
-    assert build_project(path)
+    empty_dir = tempfile.TemporaryDirectory()
+    assert build_project(empty_dir.name)
+
+    for file in files["valid"] + files["invalid"]:
+        os.close(file["fd"])
 
 
 @pytest.mark.skip(reason="Feature not implemented yet")
