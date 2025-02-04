@@ -59,8 +59,18 @@ def clone_repo():
 
 
 def compile_files(files: list[str]) -> bool:
+    try:
+        subprocess.run(["python3", "-m", "venv", "venv"])
+        if os.path.exists("requirements.txt"):
+            subprocess.run(["pip", "install", "-r", "requirements.txt"])
+
+    except subprocess.CalledProcessError as e:
+        print(f"Setting up venv failed: {e.stdout}")
+        return False
+
     command = ["python3", "-m", "py_compile"]
     command.extend(files)
+    print(f"command: {command}")
     try:
         subprocess.run(command, check=True)
         return True
@@ -81,6 +91,7 @@ def build_project(path) -> bool:
               False if any file compile with an error or the path does not exist.
     """
 
+    files = []
     if not os.path.exists(path):
         return False
 
@@ -89,13 +100,14 @@ def build_project(path) -> bool:
 
     if not os.listdir(path):
         # Directory is Empty
+        print(f"dir is empty: {path}")
         return True
 
-    files = []
-    for dirpath, _, filenames in os.walk(path):
-        for file in filenames:
-            if file.endswith(".py"):
-                files.append(dirpath + "/" + file)
+    if os.path.isdir(path):
+        for dirpath, _, filenames in os.walk(path):
+            for file in filenames:
+                if file.endswith(".py"):
+                    files.append(dirpath + "/" + file)
 
     return compile_files(files)
 
