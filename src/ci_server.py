@@ -1,4 +1,5 @@
 from flask import Flask, request, jsonify
+import requests
 import subprocess
 
 
@@ -22,8 +23,13 @@ def run_tests():
     pass
 
 
-def update_github_status():
-    pass
+def update_github_status(url: str, state: str, github_token: str) -> int:
+    headers = {"Authorization": f"token {github_token}"}
+    payload = {"state": state, "description": "CI test results", "context": "CI/Test"}
+
+    response = requests.post(url, json=payload, headers=headers)
+
+    return response.status_code
 
 
 if __name__ == "__main__":
