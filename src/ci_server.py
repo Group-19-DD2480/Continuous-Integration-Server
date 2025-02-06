@@ -1,4 +1,6 @@
 from flask import Flask, request, jsonify
+import venv
+import requests
 import subprocess
 from dotenv import load_dotenv
 import os
@@ -38,7 +40,7 @@ def handle_webhook():
 
     try:
         # Try cloning the repo
-        cloned, repo_path = clone_repo(clone_url)
+        cloned, repo_path = clone_repo(clone_url, commit_sha, repo_name)
         if not cloned:
             update_github_status(status_url, "error", GITHUB_TOKEN)
             return {"error": "Cloning failed"}, 500
@@ -93,16 +95,65 @@ def clone_repo(git_url: str, sha: str, repo_name: str) -> (bool, str):
         return False, repo_path
 
 
-def build_project():
-    pass
+def build_project(path) -> bool:
+    """
+    Fetches all python files in the directory given by path and runs a compile check on it. Return true if the check succeeds.
+    Parameters:
+        path: String representing the path to the directory to be compiled.
+              An empty directory is considered a valid path and program (returns True)
+    Returns:
+        bool: True if all python files within the path compile without errors.
+              False if any file compile with an error, path is not directory or the path does not exist.
+    """
+
+    files = []
+    if not os.path.exists(path):
+        return False
+
+    if not os.path.isdir(path):
+        return False
+
+    if not os.listdir(path):
+        # Directory is Empty
+        return True
+
+    if os.path.isdir(path):
+        for dirpath, _, filenames in os.walk(path):
+            for file in filenames:
+                if file.endswith(".py"):
+                    files.append(dirpath + "/" + file)
+
+    try:
+        venv_dir = os.path.join(path, ".venv")
+        venv.create(venv_dir)
+        if os.path.exists("requirements.txt"):
+            subprocess.run(["pip", "install", "-r", "requirements.txt"])
+
+    except subprocess.CalledProcessError as e:
+        print(f"Setting up venv failed: {e.stdout}")
+        return False
+
+    command = ["python3", "-m", "py_compile"]
+    command.extend(files)
+    try:
+        subprocess.run(command, check=True)
+        return True
+    except subprocess.CalledProcessError as e:
+        print(f"Syntax Check Failed: {e.stderr}")
+        return False
 
 
 def run_tests():
     pass
 
 
-def update_github_status():
-    pass
+def update_github_status(url: str, state: str, github_token: str) -> int:
+    headers = {"Authorization": f"token {github_token}"}
+    payload = {"state": state, "description": "CI test results", "context": "CI/Test"}
+
+    response = requests.post(url, json=payload, headers=headers)
+
+    return response.status_code
 
 
 if __name__ == "__main__":
