@@ -8,10 +8,10 @@ app = Flask(__name__)
 
 @app.route("/webhook", methods=["POST"])
 def handle_webhook():
-    
+
     # Only handle push events
-    event = request.headers.get("X-GitHub-Event","")
-    content_type = request.headers.get("Content-Type","")
+    event = request.headers.get("X-GitHub-Event", "")
+    content_type = request.headers.get("Content-Type", "")
     if event != "push":
         return {"error": "Invalid event type"}, 400
     if content_type != "application/json":
@@ -23,32 +23,33 @@ def handle_webhook():
     repo_owner = payload["repository"]["owner"]["login"]
     repo_name = payload["repository"]["name"]
     commit_sha = payload["after"]
-    status_url = f"https://api.github.com/repos/{repo_owner}/{repo_name}/statuses/{commit_sha}"
+    status_url = (
+        f"https://api.github.com/repos/{repo_owner}/{repo_name}/statuses/{commit_sha}"
+    )
 
     # Set as pending while processing
-    update_github_status(status_url,"pending", GITHUB_TOKEN)
+    update_github_status(status_url, "pending", GITHUB_TOKEN)
 
     try:
         # Try cloning the repo
-        cloned,repo_path = clone_repo(clone_url)
+        cloned, repo_path = clone_repo(clone_url)
         if not cloned:
-            update_github_status(status_url,"error", GITHUB_TOKEN)
+            update_github_status(status_url, "error", GITHUB_TOKEN)
             return {"error": "Cloning failed"}, 500
 
         # Try building and testing the repo
         if build_project(repo_path) and run_tests(repo_path):
             # Success if cloned and successfully built and tested
-            update_github_status(status_url,"success", GITHUB_TOKEN)
+            update_github_status(status_url, "success", GITHUB_TOKEN)
             return {"message": "Build and tests successful"}, 200
         else:
             # Failure if cloned but unsuccessfully built or tested
-            update_github_status(status_url,"failure", GITHUB_TOKEN)
+            update_github_status(status_url, "failure", GITHUB_TOKEN)
             return {"message": "Build and tests successful"}, 200
-
 
     except Exception as e:
         # Error if exception is raised during processing
-        update_github_status(status_url,"error", GITHUB_TOKEN)
+        update_github_status(status_url, "error", GITHUB_TOKEN)
         return {"error": f"Building/Testing error: {str(e)}"}, 500
 
 
