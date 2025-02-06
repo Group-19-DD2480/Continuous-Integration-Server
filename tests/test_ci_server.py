@@ -46,7 +46,7 @@ def test_handle_webhook(
         "pending",
         GITHUB_TOKEN,
     )
-    mock_clone.assert_any_call("https://github.com/example/repo.git")
+    mock_clone.assert_any_call("https://github.com/example/repo.git", "abcd1234")
     mock_build.assert_any_call("/repo/path")
     mock_run_tests.assert_any_call("/repo/path")
     mock_update_status.assert_any_call(
@@ -66,7 +66,7 @@ def test_handle_webhook(
         "pending",
         GITHUB_TOKEN,
     )
-    mock_clone.assert_any_call("https://github.com/example/repo.git")
+    mock_clone.assert_any_call("https://github.com/example/repo.git", "abcd1234")
     mock_build.assert_any_call("/repo/path")
     mock_run_tests.assert_any_call("/repo/path")
     mock_update_status.assert_any_call(
@@ -87,7 +87,7 @@ def test_handle_webhook(
         "pending",
         GITHUB_TOKEN,
     )
-    mock_clone.assert_any_call("https://github.com/example/repo.git")
+    mock_clone.assert_any_call("https://github.com/example/repo.git", "abcd1234")
     mock_build.assert_any_call("/repo/path")
     mock_update_status.assert_any_call(
         "https://api.github.com/repos/example/repo/statuses/abcd1234",
@@ -108,7 +108,7 @@ def test_handle_webhook(
         "pending",
         GITHUB_TOKEN,
     )
-    mock_clone.assert_any_call("https://github.com/example/repo.git")
+    mock_clone.assert_any_call("https://github.com/example/repo.git", "abcd1234")
     mock_update_status.assert_any_call(
         "https://api.github.com/repos/example/repo/statuses/abcd1234",
         "error",
