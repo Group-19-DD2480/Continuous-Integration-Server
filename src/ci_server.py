@@ -32,7 +32,7 @@ def handle_webhook():
 
     try:
         # Try cloning the repo
-        cloned, repo_path = clone_repo(clone_url, commit_sha)
+        cloned, repo_path = clone_repo(clone_url, commit_sha, repo_name)
         if not cloned:
             update_github_status(status_url, "error", GITHUB_TOKEN)
             return {"error": "Cloning failed"}, 500
