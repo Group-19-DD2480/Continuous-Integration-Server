@@ -169,7 +169,7 @@ def test_build_project():
     assert not build_project(invalid_dir.name)
 
     # Pass path to valid file as argument
-    assert build_project(files["valid"][0]["path"])
+    assert not build_project(files["valid"][0]["path"])
 
     # Pass path to invalid file as argument
     assert not build_project(files["invalid"][0]["path"])
