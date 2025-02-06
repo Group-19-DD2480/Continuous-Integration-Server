@@ -141,7 +141,7 @@ def test_clone_repo(mock_subprocess):
     if os.path.exists(repo_path):
         shutil.rmtree(repo_path, ignore_errors=True)
 
-    success, _ = clone_repo(git_url=git_url, sha=sha)
+    success, _ = clone_repo(git_url=git_url, sha=sha, repo_name=repo_name)
 
     assert success is True, "Cloning repo failed"
     mock_subprocess.assert_called_once_with(

@@ -57,19 +57,19 @@ def handle_webhook():
         return {"error": f"Building/Testing error: {str(e)}"}, 500
 
 
-def clone_repo(git_url: str, sha: str) -> (bool, str):
+def clone_repo(git_url: str, sha: str, repo_name: str) -> (bool, str):
     """
     Clone the GitHub repository into the CLONE_DIR directory
 
     Parameters:
         git_url (str): The URL of the GitHub repository to clone
         sha (str): The commit SHA to checkout after cloning
+        repo_name (str): The name of the repository
     Returns:
         bool: True if the repository was cloned successfully, False otherwise
         str: The path to the cloned repository
     """
     # Ensure that the clone directory does not exist already
-    repo_name = git_url.split("/")[-1].replace(".git", "")
     repo_path = os.path.join(CLONE_DIR, f"{repo_name}-{sha}")
 
     # Try removing existing repo
