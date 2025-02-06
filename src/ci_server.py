@@ -1,9 +1,11 @@
 from flask import Flask, request, jsonify
 import subprocess
+from dotenv import load_dotenv
 import os
 import shutil
 
-GITHUB_TOKEN = None
+load_dotenv()
+GITHUB_TOKEN = os.getenv("GITHUB_TOKEN")
 
 app = Flask(__name__)
 
