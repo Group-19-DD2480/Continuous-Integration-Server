@@ -1,7 +1,11 @@
 import pytest
+import subprocess
+import requests
 from unittest.mock import patch
 import sys
 import os
+import shutil
+
 import json
 import tempfile
 
@@ -48,7 +52,9 @@ def test_handle_webhook(
         "pending",
         GITHUB_TOKEN,
     )
-    mock_clone.assert_any_call("https://github.com/example/repo.git")
+    mock_clone.assert_any_call(
+        "https://github.com/example/repo.git", "abcd1234", "repo"
+    )
     mock_build.assert_any_call("/repo/path")
     mock_run_tests.assert_any_call("/repo/path")
     mock_update_status.assert_any_call(
@@ -68,7 +74,9 @@ def test_handle_webhook(
         "pending",
         GITHUB_TOKEN,
     )
-    mock_clone.assert_any_call("https://github.com/example/repo.git")
+    mock_clone.assert_any_call(
+        "https://github.com/example/repo.git", "abcd1234", "repo"
+    )
     mock_build.assert_any_call("/repo/path")
     mock_run_tests.assert_any_call("/repo/path")
     mock_update_status.assert_any_call(
@@ -89,7 +97,9 @@ def test_handle_webhook(
         "pending",
         GITHUB_TOKEN,
     )
-    mock_clone.assert_any_call("https://github.com/example/repo.git")
+    mock_clone.assert_any_call(
+        "https://github.com/example/repo.git", "abcd1234", "repo"
+    )
     mock_build.assert_any_call("/repo/path")
     mock_update_status.assert_any_call(
         "https://api.github.com/repos/example/repo/statuses/abcd1234",
@@ -110,7 +120,9 @@ def test_handle_webhook(
         "pending",
         GITHUB_TOKEN,
     )
-    mock_clone.assert_any_call("https://github.com/example/repo.git")
+    mock_clone.assert_any_call(
+        "https://github.com/example/repo.git", "abcd1234", "repo"
+    )
     mock_update_status.assert_any_call(
         "https://api.github.com/repos/example/repo/statuses/abcd1234",
         "error",
@@ -126,10 +138,30 @@ def test_handle_webhook(
     assert response.status_code == 400
 
 
-@pytest.mark.skip(reason="Feature not implemented yet")
 @patch("subprocess.run")
 def test_clone_repo(mock_subprocess):
-    pass
+    """Test that clone_repo correctly calls git clone"""
+    git_url = "https://github.com/Group-19-DD2480/Continuous-Integration-Server.git"
+    sha = "abcd1234"
+    mock_subprocess.return_value = None
+
+    repo_name = git_url.split("/")[-1].replace(".git", "")
+    repo_path = os.path.join(
+        CLONE_DIR, f"{repo_name}-{sha}"
+    )  # This is "/tmp/Continuous-Integration-Server"
+
+    if os.path.exists(repo_path):
+        shutil.rmtree(repo_path, ignore_errors=True)
+
+    success, _ = clone_repo(git_url=git_url, sha=sha, repo_name=repo_name)
+
+    assert success is True, "Cloning repo failed"
+    mock_subprocess.assert_called_once_with(
+        ["git", "clone", git_url], cwd=CLONE_DIR, check=True
+    )
+
+    if os.path.exists(repo_path):
+        shutil.rmtree(repo_path, ignore_errors=True)
 
 
 # @pytest.fixture
@@ -188,7 +220,26 @@ def test_run_tests(mock_subprocess):
     pass
 
 
-@pytest.mark.skip(reason="Feature not implemented yet")
 @patch("requests.post")
-def test_update_github_status(mock_post):
-    pass
+@patch("requests.Response")
+def test_update_github_status(mock_response, mock_post):
+    mock_response.status_code = 201
+    mock_post.return_value = mock_response
+
+    status_code = update_github_status(
+        url="https://api.github.com/repos/user/repo",
+        state="success",
+        github_token="token",
+    )
+
+    mock_post.assert_called_once_with(
+        "https://api.github.com/repos/user/repo",
+        json={
+            "state": "success",
+            "description": "CI test results",
+            "context": "CI/Test",
+        },
+        headers={"Authorization": "token token"},
+    )
+
+    assert status_code == mock_response.status_code

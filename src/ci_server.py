@@ -1,11 +1,15 @@
 from flask import Flask, request, jsonify
 import venv
-import os
+import requests
 import subprocess
+import os
+import shutil
 
 GITHUB_TOKEN = None
 
 app = Flask(__name__)
+
+CLONE_DIR = "/tmp/"  # Temporary directory to clone the repo into
 
 
 @app.route("/webhook", methods=["POST"])
@@ -34,7 +38,7 @@ def handle_webhook():
 
     try:
         # Try cloning the repo
-        cloned, repo_path = clone_repo(clone_url)
+        cloned, repo_path = clone_repo(clone_url, commit_sha, repo_name)
         if not cloned:
             update_github_status(status_url, "error", GITHUB_TOKEN)
             return {"error": "Cloning failed"}, 500
@@ -55,8 +59,38 @@ def handle_webhook():
         return {"error": f"Building/Testing error: {str(e)}"}, 500
 
 
-def clone_repo():
-    pass
+def clone_repo(git_url: str, sha: str, repo_name: str) -> (bool, str):
+    """
+    Clone the GitHub repository into the CLONE_DIR directory
+
+    Parameters:
+        git_url (str): The URL of the GitHub repository to clone
+        sha (str): The commit SHA to checkout after cloning
+        repo_name (str): The name of the repository
+    Returns:
+        bool: True if the repository was cloned successfully, False otherwise
+        str: The path to the cloned repository
+    """
+    # Ensure that the clone directory does not exist already
+    repo_path = os.path.join(CLONE_DIR, f"{repo_name}-{sha}")
+
+    # Try removing existing repo
+    if os.path.exists(repo_path):
+        try:
+            shutil.rmtree(repo_path)
+            print(f"Deleted existing repo: {repo_path}")
+        except PermissionError:
+            print(f"Permission denied: Could not delete {repo_path}")
+            return False, repo_path
+
+    try:
+        # Run the git clone command
+        subprocess.run(["git", "clone", git_url], cwd=CLONE_DIR, check=True)
+        print(f"Repo cloned successfully into {repo_path}")
+        return True, repo_path
+    except subprocess.CalledProcessError as e:
+        print(f"Could not clone repo: {e}")
+        return False, repo_path
 
 
 def build_project(path) -> bool:
@@ -111,8 +145,13 @@ def run_tests():
     pass
 
 
-def update_github_status():
-    pass
+def update_github_status(url: str, state: str, github_token: str) -> int:
+    headers = {"Authorization": f"token {github_token}"}
+    payload = {"state": state, "description": "CI test results", "context": "CI/Test"}
+
+    response = requests.post(url, json=payload, headers=headers)
+
+    return response.status_code
 
 
 if __name__ == "__main__":
