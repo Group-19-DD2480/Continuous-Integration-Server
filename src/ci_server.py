@@ -1,9 +1,13 @@
 from flask import Flask, request, jsonify
 import subprocess
+import os
+import shutil
 
 GITHUB_TOKEN = None
 
 app = Flask(__name__)
+
+CLONE_DIR = "/tmp/"  # Temporary directory to clone the repo into
 
 
 @app.route("/webhook", methods=["POST"])
@@ -53,8 +57,38 @@ def handle_webhook():
         return {"error": f"Building/Testing error: {str(e)}"}, 500
 
 
-def clone_repo():
-    pass
+def clone_repo(git_url: str, sha: str, repo_name: str) -> (bool, str):
+    """
+    Clone the GitHub repository into the CLONE_DIR directory
+
+    Parameters:
+        git_url (str): The URL of the GitHub repository to clone
+        sha (str): The commit SHA to checkout after cloning
+        repo_name (str): The name of the repository
+    Returns:
+        bool: True if the repository was cloned successfully, False otherwise
+        str: The path to the cloned repository
+    """
+    # Ensure that the clone directory does not exist already
+    repo_path = os.path.join(CLONE_DIR, f"{repo_name}-{sha}")
+
+    # Try removing existing repo
+    if os.path.exists(repo_path):
+        try:
+            shutil.rmtree(repo_path)
+            print(f"Deleted existing repo: {repo_path}")
+        except PermissionError:
+            print(f"Permission denied: Could not delete {repo_path}")
+            return False, repo_path
+
+    try:
+        # Run the git clone command
+        subprocess.run(["git", "clone", git_url], cwd=CLONE_DIR, check=True)
+        print(f"Repo cloned successfully into {repo_path}")
+        return True, repo_path
+    except subprocess.CalledProcessError as e:
+        print(f"Could not clone repo: {e}")
+        return False, repo_path
 
 
 def build_project():
