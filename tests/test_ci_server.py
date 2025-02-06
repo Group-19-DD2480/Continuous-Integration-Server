@@ -130,17 +130,18 @@ def test_handle_webhook(
 def test_clone_repo(mock_subprocess):
     """Test that clone_repo correctly calls git clone"""
     git_url = "https://github.com/Group-19-DD2480/Continuous-Integration-Server.git"
+    sha = "abcd1234"
     mock_subprocess.return_value = None
 
     repo_name = git_url.split("/")[-1].replace(".git", "")
     repo_path = os.path.join(
-        CLONE_DIR, repo_name
+        CLONE_DIR, f"{repo_name}-{sha}"
     )  # This is "/tmp/Continuous-Integration-Server"
 
     if os.path.exists(repo_path):
         shutil.rmtree(repo_path, ignore_errors=True)
 
-    success, _ = clone_repo(git_url=git_url)
+    success, _ = clone_repo(git_url=git_url, sha=sha)
 
     assert success is True, "Cloning repo failed"
     mock_subprocess.assert_called_once_with(
