@@ -3,6 +3,7 @@ import subprocess
 import os
 import shutil
 
+GITHUB_TOKEN = None
 
 app = Flask(__name__)
 
@@ -11,7 +12,49 @@ CLONE_DIR = "/tmp/"  # Temporary directory to clone the repo into
 
 @app.route("/webhook", methods=["POST"])
 def handle_webhook():
-    pass
+
+    # Only handle push events
+    event = request.headers.get("X-GitHub-Event", "")
+    content_type = request.headers.get("Content-Type", "")
+    if event != "push":
+        return {"error": "Invalid event type"}, 400
+    if content_type != "application/json":
+        return {"error": "Invalid content type"}, 400
+    payload = request.get_json()
+
+    # Format the response url
+    clone_url = payload["repository"]["clone_url"]
+    repo_owner = payload["repository"]["owner"]["login"]
+    repo_name = payload["repository"]["name"]
+    commit_sha = payload["after"]
+    status_url = (
+        f"https://api.github.com/repos/{repo_owner}/{repo_name}/statuses/{commit_sha}"
+    )
+
+    # Set as pending while processing
+    update_github_status(status_url, "pending", GITHUB_TOKEN)
+
+    try:
+        # Try cloning the repo
+        cloned, repo_path = clone_repo(clone_url)
+        if not cloned:
+            update_github_status(status_url, "error", GITHUB_TOKEN)
+            return {"error": "Cloning failed"}, 500
+
+        # Try building and testing the repo
+        if build_project(repo_path) and run_tests(repo_path):
+            # Success if cloned and successfully built and tested
+            update_github_status(status_url, "success", GITHUB_TOKEN)
+            return {"message": "Build and tests successful"}, 200
+        else:
+            # Failure if cloned but unsuccessfully built or tested
+            update_github_status(status_url, "failure", GITHUB_TOKEN)
+            return {"message": "Build and tests successful"}, 200
+
+    except Exception as e:
+        # Error if exception is raised during processing
+        update_github_status(status_url, "error", GITHUB_TOKEN)
+        return {"error": f"Building/Testing error: {str(e)}"}, 500
 
 
 def clone_repo(git_url: str):
@@ -22,6 +65,7 @@ def clone_repo(git_url: str):
         git_url (str): The URL of the GitHub repository to clone
     Returns:
         bool: True if the repository was cloned successfully, False otherwise
+        str: The path to the cloned repository
     """
     # Ensure that the clone directory does not exist already
     repo_name = git_url.split("/")[-1].replace(".git", "")
@@ -31,19 +75,19 @@ def clone_repo(git_url: str):
     if os.path.exists(repo_path):
         try:
             shutil.rmtree(repo_path)
-            print(f"✅ Deleted existing repo: {repo_path}")
+            print(f"Deleted existing repo: {repo_path}")
         except PermissionError:
-            print(f"⚠️ Permission denied: Could not delete {repo_path}")
-            return False
+            print(f"Permission denied: Could not delete {repo_path}")
+            return False, repo_path
 
     try:
         # Run the git clone command
         subprocess.run(["git", "clone", git_url], cwd=CLONE_DIR, check=True)
-        print(f"✅ Repo cloned successfully into {repo_path}")
-        return True
+        print(f"Repo cloned successfully into {repo_path}")
+        return True, repo_path
     except subprocess.CalledProcessError as e:
         print(f"Could not clone repo: {e}")
-        return False
+        return False, repo_path
 
 
 def build_project():
