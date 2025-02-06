@@ -1,5 +1,6 @@
 import pytest
 import subprocess
+import requests
 from unittest.mock import patch
 import sys
 import os
@@ -164,7 +165,26 @@ def test_run_tests(mock_subprocess):
     pass
 
 
-@pytest.mark.skip(reason="Feature not implemented yet")
 @patch("requests.post")
-def test_update_github_status(mock_post):
-    pass
+@patch("requests.Response")
+def test_update_github_status(mock_response, mock_post):
+    mock_response.status_code = 201
+    mock_post.return_value = mock_response
+
+    status_code = update_github_status(
+        url="https://api.github.com/repos/user/repo",
+        state="success",
+        github_token="token",
+    )
+
+    mock_post.assert_called_once_with(
+        "https://api.github.com/repos/user/repo",
+        json={
+            "state": "success",
+            "description": "CI test results",
+            "context": "CI/Test",
+        },
+        headers={"Authorization": "token token"},
+    )
+
+    assert status_code == mock_response.status_code
