@@ -142,7 +142,7 @@ def test_clone_repo(mock_subprocess):
     """Test that clone_repo correctly calls git clone"""
     git_url = "https://github.com/Group-19-DD2480/Continuous-Integration-Server.git"
     sha = "abcd1234"
-    repo_name = "Continous-Integration-Server"
+    repo_name = "Continuous-Integration-Server"
     mock_subprocess.return_value = None
 
     repo_name = git_url.split("/")[-1].replace(".git", "")
