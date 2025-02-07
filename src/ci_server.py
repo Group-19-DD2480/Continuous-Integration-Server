@@ -4,6 +4,8 @@ import requests
 import subprocess
 import os
 import shutil
+import sys
+
 
 GITHUB_TOKEN = None
 
@@ -131,7 +133,7 @@ def build_project(path) -> bool:
         print(f"Setting up venv failed: {e.stdout}")
         return False
 
-    command = ["python3", "-m", "py_compile"]
+    command = [sys.executable, "-m", "py_compile"]
     command.extend(files)
     try:
         subprocess.run(command, check=True)
