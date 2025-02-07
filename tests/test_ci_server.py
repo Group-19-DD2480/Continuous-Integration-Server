@@ -214,10 +214,59 @@ def test_build_project():
         os.close(file["fd"])
 
 
-@pytest.mark.skip(reason="Feature not implemented yet")
-@patch("subprocess.run")
-def test_run_tests(mock_subprocess):
-    pass
+@pytest.fixture
+def setup_test_repo_success():
+    """Fixture to create a success test repo with test files."""
+    with tempfile.TemporaryDirectory() as temp_dir:
+        test_file_path = os.path.join(temp_dir, "test_sample.py")
+
+        # Create a test file with both passing and failing tests
+        test_file_content = """
+import pytest
+
+def test_pass1():
+    assert True
+
+def test_pass2():
+    assert True
+"""
+        with open(test_file_path, "w") as f:
+            f.write(test_file_content)
+
+        yield temp_dir  # Provide the temporary directory path to the test function
+
+
+@pytest.fixture
+def setup_test_repo_failure():
+    """Fixture to create a failure test repo with test files."""
+    with tempfile.TemporaryDirectory() as temp_dir:
+        test_file_path = os.path.join(temp_dir, "test_sample.py")
+
+        # Create a test file with both passing and failing tests
+        test_file_content = """
+import pytest
+
+def test_pass():
+    assert True
+
+def test_fail():
+    assert False
+"""
+        with open(test_file_path, "w") as f:
+            f.write(test_file_content)
+
+        yield temp_dir  # Provide the temporary directory path to the test function
+
+
+def test_run_tests(setup_test_repo_success, setup_test_repo_failure):
+    """Test run_tests()"""
+    repo_path = setup_test_repo_success
+    result = run_tests(repo_path)
+    assert result, "Expected run_tests() to return True when all tests pass"
+
+    repo_path = setup_test_repo_failure
+    result = run_tests(repo_path)
+    assert not result, "Expected run_tests() to return False due to a failing test"
 
 
 @patch("requests.post")
