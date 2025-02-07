@@ -177,18 +177,17 @@ def test_build_project():
     # valid file in valid directory
     fd, valid_file1 = tempfile.mkstemp(suffix=".py", dir=valid_dir.name, text=True)
     files["valid"].append({"fd": fd, "path": valid_file1})
-    os.close(fd)
 
     # invalid file in invalid dir
     fd, invalid_file1 = tempfile.mkstemp(suffix=".py", dir=invalid_dir.name, text=True)
-
     files["invalid"].append({"fd": fd, "path": invalid_file1})
-    os.close(fd)
 
     # valid file in invalid dir
     fd, valid_file2 = tempfile.mkstemp(suffix=".py", dir=invalid_dir.name, text=True)
     files["valid"].append({"fd": fd, "path": valid_file2})
-    os.close(fd)
+
+    for file in files["valid"] + files["invalid"]:
+        os.close(file["fd"])
 
     for file in files["valid"]:
         with open(file["path"], "w") as f:
@@ -197,7 +196,7 @@ def test_build_project():
     for file in files["invalid"]:
         with open(file["path"], "w") as f:
             f.write(invalid_python_program)
-    
+
     # Path to directory with valid files
     assert build_project(valid_dir.name)
 
@@ -214,10 +213,12 @@ def test_build_project():
     empty_dir = tempfile.TemporaryDirectory()
     assert build_project(empty_dir.name)
 
+
 @pytest.mark.skip(reason="Feature not implemented yet")
 @patch("subprocess.run")
 def test_run_tests(mock_subprocess):
     pass
+
 
 @patch("requests.post")
 @patch("requests.Response")
