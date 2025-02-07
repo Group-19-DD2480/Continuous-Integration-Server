@@ -186,6 +186,9 @@ def test_build_project():
     fd, valid_file2 = tempfile.mkstemp(suffix=".py", dir=invalid_dir.name, text=True)
     files["valid"].append({"fd": fd, "path": valid_file2})
 
+    for file in files["valid"] + files["invalid"]:
+        os.close(file["fd"])
+
     for file in files["valid"]:
         with open(file["path"], "w") as f:
             f.write(valid_python_program + "\n")
@@ -209,9 +212,6 @@ def test_build_project():
     # Pass empty directory as argument
     empty_dir = tempfile.TemporaryDirectory()
     assert build_project(empty_dir.name)
-
-    for file in files["valid"] + files["invalid"]:
-        os.close(file["fd"])
 
 
 @pytest.mark.skip(reason="Feature not implemented yet")
