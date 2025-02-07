@@ -1,5 +1,4 @@
 import pytest
-import subprocess
 import requests
 from unittest.mock import patch
 import sys
@@ -143,6 +142,7 @@ def test_clone_repo(mock_subprocess):
     """Test that clone_repo correctly calls git clone"""
     git_url = "https://github.com/Group-19-DD2480/Continuous-Integration-Server.git"
     sha = "abcd1234"
+    repo_name = "Continuous-Integration-Server"
     mock_subprocess.return_value = None
 
     repo_name = git_url.split("/")[-1].replace(".git", "")
@@ -157,7 +157,7 @@ def test_clone_repo(mock_subprocess):
 
     assert success is True, "Cloning repo failed"
     mock_subprocess.assert_called_once_with(
-        ["git", "clone", git_url], cwd=CLONE_DIR, check=True
+        ["git", "clone", git_url, f"/tmp/{repo_name}-{sha}"], check=True
     )
 
     if os.path.exists(repo_path):
