@@ -125,17 +125,41 @@ def build_project(path) -> bool:
                 if file.endswith(".py"):
                     files.append(dirpath + "/" + file)
 
+    # Create a virtual environment in the directory
     try:
         venv_dir = os.path.join(path, ".venv")
         venv.create(venv_dir)
-        if os.path.exists("requirements.txt"):
-            subprocess.run(["pip", "install", "-r", "requirements.txt"])
-
     except subprocess.CalledProcessError as e:
-        print(f"Setting up venv failed: {e.stdout}")
+        print(f"Creating venv failed: {e.stdout}")
         return False
 
-    command = [sys.executable, "-m", "py_compile"]
+    # Choose the correct python executable based on the OS
+    if os.name == "nt":
+        python_executable = os.path.join(venv_dir, "Scripts", "python.exe")
+    else:
+        python_executable = os.path.join(venv_dir, "bin", "python")
+
+    # Ensure pip is installed in the virtual environment, install pip otherwise
+    subprocess.run(
+        [python_executable, "-m", "ensurepip"],
+        cwd=path,
+        check=True,
+    )
+
+    # Install the requirements.txt file if it exists
+    if os.path.exists("requirements.txt"):
+        try:
+            subprocess.run(
+                [python_executable, "-m", "pip", "install", "-r", "requirements.txt"],
+                cwd=path,  # Make sure the command runs in the directory containing requirements.txt
+                check=True,
+            )
+            print("Requirements installed successfully.")
+        except subprocess.CalledProcessError as e:
+            print(f"Failed to install requirements: {e}")
+
+    # Run the compile check on all python files
+    command = [python_executable, "-m", "py_compile"]
     command.extend(files)
     try:
         subprocess.run(command, check=True)
