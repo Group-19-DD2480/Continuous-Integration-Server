@@ -145,8 +145,84 @@ def build_project(path) -> bool:
         return False
 
 
-def run_tests():
-    pass
+def run_tests(path: str) -> bool:
+    """
+    Runs all tests in the given repository path.
+
+    - Using pytest
+
+    Parameters:
+        path (str): Path to the cloned repository.
+
+    Returns:
+        bool: True if all tests pass, False otherwise.
+    """
+    # Check if the path exists
+    if not os.path.exists(path):
+        return False
+
+    # Determine the virtual environment directory path
+    venv_dir = os.path.join(path, ".venv")
+    if not os.path.exists(venv_dir):
+        venv.create(venv_dir)
+
+    # Activate the virtual environment according to the OS
+    if os.name == "nt":
+        python_executable = os.path.join(venv_dir, "Scripts", "python.exe")
+    else:
+        python_executable = os.path.join(venv_dir, "bin", "python")
+
+    # Check if the python executable exists
+    if not os.path.exists(python_executable):
+        print(f"Error: Python executable not found at {python_executable}")
+        return False
+
+    # Ensure pip is installed in the virtual environment
+    subprocess.run(
+        [python_executable, "-m", "ensurepip"],
+        cwd=path,
+        check=True,
+    )
+
+    # Install the requirements.txt file if it exists
+    try:
+        subprocess.run(
+            [python_executable, "-m", "pip", "install", "-r", "requirements.txt"],
+            cwd=path,  # Make sure the command runs in the directory containing requirements.txt
+            check=True,
+        )
+        print("Requirements installed successfully.")
+    except subprocess.CalledProcessError as e:
+        print(f"Failed to install requirements: {e}")
+
+    # Check if pytest is installed in the environment
+    try:
+        subprocess.run(
+            [python_executable, "-m", "pytest", "--version"], check=True, capture_output=True
+        )
+    except subprocess.CalledProcessError as e:
+        print(f"pytest not found in the environment: {e.stderr}")
+        try:
+            subprocess.run(
+                [python_executable, "-m", "pip", "install", "pytest"],
+                check=True,
+                text=True
+            )
+        except subprocess.CalledProcessError as e:
+            print(f"Failed to install pytest:\n{e.stderr}")
+            return False
+
+    # Run the tests using pytest
+    test_command = [python_executable, "-m", "pytest"]
+    try:
+        result = subprocess.run(
+            test_command, cwd=path, check=True, capture_output=True, text=True
+        )
+        print(f"Tests passed!\n{result.stdout}")
+        return True
+    except subprocess.CalledProcessError as e:
+        print(f"Tests failed:\n{e.stdout}\n{e.stderr}")
+        return False
 
 
 def update_github_status(url: str, state: str, github_token: str) -> int:
