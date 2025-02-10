@@ -19,9 +19,14 @@ CLONE_DIR = "/tmp/"  # Temporary directory to clone the repo into
 @app.route("/webhook", methods=["POST"])
 def handle_webhook():
 
-    # Only handle push events
     event = request.headers.get("X-GitHub-Event", "")
     content_type = request.headers.get("Content-Type", "")
+
+    # Respond to pings
+    if event == "ping":
+        return {"message": "Server running"}, 200
+
+    # Handle push events
     if event != "push":
         return {"error": "Invalid event type"}, 400
     if content_type != "application/json":
@@ -222,7 +227,9 @@ def run_tests(path: str) -> bool:
     # Check if pytest is installed in the environment
     try:
         subprocess.run(
-            [python_executable, "-m", "pytest", "--version"], check=True, capture_output=True
+            [python_executable, "-m", "pytest", "--version"],
+            check=True,
+            capture_output=True,
         )
     except subprocess.CalledProcessError as e:
         print(f"pytest not found in the environment: {e.stderr}")
@@ -230,7 +237,7 @@ def run_tests(path: str) -> bool:
             subprocess.run(
                 [python_executable, "-m", "pip", "install", "pytest"],
                 check=True,
-                text=True
+                text=True,
             )
         except subprocess.CalledProcessError as e:
             print(f"Failed to install pytest:\n{e.stderr}")

@@ -130,11 +130,17 @@ def test_handle_webhook(
 
     assert response.status_code == 500
 
-    # Invalid request commit
+    # Invalid event
     headers = {"X-GitHub-Event": "pull_request", "Content-Type": "application/json"}
     response = client.post("/webhook", data=json.dumps(payload), headers=headers)
 
     assert response.status_code == 400
+
+    # Ping event
+    headers = {"X-GitHub-Event": "ping", "Content-Type": "application/json"}
+    response = client.post("/webhook", data=json.dumps(payload), headers=headers)
+
+    assert response.status_code == 200
 
 
 @patch("subprocess.run")
