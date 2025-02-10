@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, render_template
 import venv
 import requests
 import subprocess
@@ -22,21 +22,20 @@ CLONE_DIR = "/tmp/"  # Temporary directory to clone the repo into
 
 
 @app.route("/builds")
-def builds():
+def builds_view():
     db = get_db()
     builds = get_builds(db)
     close_db()
-    return jsonify(builds), 200
-
+    return render_template('builds.html', builds=builds)
 
 @app.route("/build/<int:build_id>", methods=["GET"])
-def build(build_id):
+def build_view(build_id):
     db = get_db()
     build = get_build(db, build_id)
     close_db()
     if build is None:
         return {"error": "Build not found"}, 404
-    return jsonify(build), 200
+    return render_template('build.html', build=build)
 
 
 @app.route("/webhook", methods=["POST"])
