@@ -2,3 +2,4 @@ Flask==3.1.0
 pytest==8.3.4
 python-dotenv==1.0.1
 requests==2.32.3
+sphinx==8.1.3
