@@ -1,4 +1,5 @@
 # Continuous Integration Server
+This is a lightweight Continuous Integration (CI) server built using Flask. It listens for GitHub webhook events, clones repositories on push events, runs build and test processes, and updates the commit status on GitHub accordingly.
 
 # Table of Contents
 
