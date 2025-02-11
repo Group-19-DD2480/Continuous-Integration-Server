@@ -6,6 +6,7 @@ from dotenv import load_dotenv
 import os
 import shutil
 from threading import Thread
+import sys
 
 import sqlite3
 
@@ -19,6 +20,11 @@ GITHUB_TOKEN = os.getenv("GITHUB_TOKEN")
 app = Flask(__name__)
 
 CLONE_DIR = "/tmp/"  # Temporary directory to clone the repo into
+
+
+@app.route("/documentation")
+def documentation_view():
+    return render_template("../docs/html/index.html")
 
 
 @app.route("/builds")
@@ -138,7 +144,6 @@ def process_request(payload: dict) -> int:
                         "failure",
                         testsOutput,
                     )
-            except sqlite3.Error as e:
                 print("Database error:", e)
             print("message", "Build/tests failed")
             return 200
