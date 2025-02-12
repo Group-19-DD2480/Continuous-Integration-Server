@@ -21,13 +21,15 @@ def client():
     return app.test_client()
 
 
+@patch("ci_server.process_request")
 @patch("ci_server.clone_repo")
 @patch("ci_server.build_project")
 @patch("ci_server.run_tests")
 @patch("ci_server.update_github_status")
 def test_handle_webhook(
-    mock_update_status, mock_run_tests, mock_build, mock_clone, client
+    mock_update_status, mock_run_tests, mock_build, mock_clone, mock_process, client
 ):
+    mock_process.return_value = 200
     # Invalid event
     headers = {"X-GitHub-Event": "push", "Content-Type": "application/json"}
 
