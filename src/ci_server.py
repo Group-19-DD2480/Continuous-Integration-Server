@@ -5,7 +5,6 @@ import subprocess
 from dotenv import load_dotenv
 import os
 import shutil
-import sys
 
 
 load_dotenv()
@@ -17,7 +16,7 @@ CLONE_DIR = "/tmp/"  # Temporary directory to clone the repo into
 
 
 @app.route("/webhook", methods=["POST"])
-ef handle_webhook():
+def handle_webhook():
 
     event = request.headers.get("X-GitHub-Event", "")
     content_type = request.headers.get("Content-Type", "")
@@ -68,7 +67,7 @@ ef handle_webhook():
         return {"error": f"Building/Testing error: {str(e)}"}, 500
 
 
-def clone_repo(git_url: str, sha: str, repo_name: str) -> (bool, str):
+ef clone_repo(git_url: str, sha: str, repo_name: str) -> (bool, str):
     """
     Clone the GitHub repository into the CLONE_DIR directory
 
