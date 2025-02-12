@@ -9,6 +9,7 @@ import sys
 from threading import Thread
 
 import sqlite3
+
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../src")))
 from db import *
 import datetime
@@ -26,7 +27,8 @@ def builds_view():
     db = get_db()
     builds = get_builds(db)
     close_db()
-    return render_template('builds.html', builds=builds)
+    return render_template("builds.html", builds=builds)
+
 
 @app.route("/build/<int:build_id>", methods=["GET"])
 def build_view(build_id):
@@ -35,7 +37,7 @@ def build_view(build_id):
     close_db()
     if build is None:
         return {"error": "Build not found"}, 404
-    return render_template('build.html', build=build)
+    return render_template("build.html", build=build)
 
 
 @app.route("/webhook", methods=["POST"])
@@ -109,8 +111,14 @@ def process_request(payload: dict) -> int:
             # Success if cloned and successfully built and tested
             update_github_status(status_url, "success", GITHUB_TOKEN)
             try:
-                db_conn = get_db()
-                insert_build(db_conn, commit_sha, datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'), "success")
+                with app.app_context():
+                    db_conn = get_db()
+                    insert_build(
+                        db_conn,
+                        commit_sha,
+                        datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                        "success",
+                    )
             except sqlite3.Error as e:
                 print("Database error:", e)
             print("message", "Build and tests successful")
@@ -119,16 +127,23 @@ def process_request(payload: dict) -> int:
             # Failure if cloned but unsuccessfully built or tested
             update_github_status(status_url, "failure", GITHUB_TOKEN)
             try:
-                db_conn = get_db()
-                insert_build(db_conn, commit_sha, datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'), "failure")
+                with app.app_context():
+                    db_conn = get_db()
+                    insert_build(
+                        db_conn,
+                        commit_sha,
+                        datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                        "failure",
+                    )
             except sqlite3.Error as e:
                 print("Database error:", e)
             print("message", "Build/tests failed")
             return 200
 
-    except Exception:
+    except Exception as e:
         # Error if exception is raised during processing
         update_github_status(status_url, "error", GITHUB_TOKEN)
+        print("error", e)
         return 500
 
 
@@ -347,5 +362,6 @@ def update_github_status(url: str, state: str, github_token: str) -> int:
 
 
 if __name__ == "__main__":
-    initialise_db()
     app.run(host="127.0.0.1", port=5000)
+    with app.app_context():
+        initialise_db()
