@@ -257,6 +257,22 @@ def run_tests(path: str) -> bool:
 
 
 def update_github_status(url: str, state: str, github_token: str) -> int:
+    """
+    Updates the status of a commit on github.
+
+    This function sends a commit status update to github using the Statuses API.
+    The status can be one of the following: "success", "failure", "pending", or "error".
+
+    :param url: The github API endpoint for updating commit statuses.
+    :type url: str
+    :param state: The status to be sent to github. Must be one of: "success", "failure", "pending", or "error".
+    :type state: str
+    :param github_token: The authentication token used to access the github API.
+    :type github_token: str
+
+    :return: The HTTP status code returned by github.
+    :rtype: int
+    """
     headers = {"Authorization": f"token {github_token}"}
     payload = {"state": state, "description": "CI test results", "context": "CI/Test"}
 
