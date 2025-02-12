@@ -27,7 +27,12 @@ def client():
 @patch("ci_server.run_tests")
 @patch("ci_server.update_github_status")
 def test_handle_webhook(
-    mock_update_status, mock_run_tests, mock_build, mock_clone_repo, mock_process, client
+    mock_update_status,
+    mock_run_tests,
+    mock_build,
+    mock_clone_repo,
+    mock_process,
+    client,
 ):
     mock_process.return_value = 200
     # Invalid event
@@ -57,6 +62,9 @@ def test_handle_webhook(
 
     assert response.status_code == 200
 
+
+@patch("ci_server.get_db")
+@patch("ci_server.insert_build")
 @patch("ci_server.clone_repo")
 @patch("ci_server.build_project")
 @patch("ci_server.run_tests")
@@ -65,12 +73,16 @@ def test_process_request(
     mock_update_status,
     mock_run_tests,
     mock_build,
-    mock_clone_repo
+    mock_clone_repo,
+    mock_insert_build,
+    mock_get_db,
 ):
     # Passing commit
     mock_clone_repo.return_value = (True, "/repo/path")
     mock_build.return_value = True
     mock_run_tests.return_value = True
+    mock_get_db.return_value = None
+    mock_insert_build.return_value = 1
 
     payload = {
         "repository": {
