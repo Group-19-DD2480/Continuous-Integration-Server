@@ -8,6 +8,7 @@ from flask import Flask, g
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../src")))
 from db import *
 
+
 @pytest.fixture
 def app_context(tmp_path, monkeypatch):
     # Create a Flask app.
@@ -24,6 +25,7 @@ def app_context(tmp_path, monkeypatch):
         yield app
         # The temporary directory will be automatically cleaned up by pytest.
 
+
 # test initialise_db
 def test_initialise_db(tmp_path, monkeypatch):
     # Use a separate temporary database file.
@@ -32,7 +34,7 @@ def test_initialise_db(tmp_path, monkeypatch):
     conn = initialise_db()
     # Check that the file was created.
     assert os.path.exists(str(temp_db_path))
-    
+
     # Verify that the 'builds' table exists.
     cursor = conn.cursor()
     cursor.execute(
@@ -53,7 +55,8 @@ def test_insert_and_query_builds(app_context):
     commit_identifier = "abc123"
     build_date = "2023-10-10"
     status = "success"
-    build_id = insert_build(db_conn, commit_identifier, build_date, status)
+    test_output = "All tests passed."
+    build_id = insert_build(db_conn, commit_identifier, build_date, status, test_output)
     assert isinstance(build_id, int)
 
     # Retrieve all build records.

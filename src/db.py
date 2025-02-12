@@ -17,7 +17,8 @@ def initialise_db():
                 id INTEGER PRIMARY KEY,
                 commit_identifier TEXT NOT NULL,
                 build_date TEXT NOT NULL,
-                status TEXT not null
+                status TEXT not null,
+                test_output TEXT not null
             )
         """
         )
@@ -42,14 +43,14 @@ def close_db():
 
 
 # Insert a new build record
-def insert_build(conn, commit_identifier, build_date, status):
+def insert_build(conn, commit_identifier, build_date, status, test_output):
     cursor = conn.cursor()
     cursor.execute(
         """
-        INSERT INTO builds (commit_identifier, build_date, status)
-        VALUES (?, ?, ?)
+        INSERT INTO builds (commit_identifier, build_date, status, test_output)
+        VALUES (?, ?, ?, ?)
     """,
-        (commit_identifier, build_date, status),
+        (commit_identifier, build_date, status, test_output,),
     )
     conn.commit()
     return cursor.lastrowid

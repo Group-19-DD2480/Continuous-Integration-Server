@@ -63,8 +63,8 @@ def test_handle_webhook(
     assert response.status_code == 200
 
 
-@patch("ci_server.get_db")
-@patch("ci_server.insert_build")
+# @patch("ci_server.get_db")
+# @patch("ci_server.insert_build")
 @patch("ci_server.clone_repo")
 @patch("ci_server.build_project")
 @patch("ci_server.run_tests")
@@ -74,15 +74,15 @@ def test_process_request(
     mock_run_tests,
     mock_build,
     mock_clone_repo,
-    mock_insert_build,
-    mock_get_db,
+    # mock_insert_build,
+    # mock_get_db,
 ):
     # Passing commit
     mock_clone_repo.return_value = (True, "/repo/path")
     mock_build.return_value = True
-    mock_run_tests.return_value = True
-    mock_get_db.return_value = None
-    mock_insert_build.return_value = 1
+    mock_run_tests.return_value = (True, "")
+    # mock_get_db.return_value = None
+    # mock_insert_build.return_value = 1
 
     payload = {
         "repository": {
@@ -108,7 +108,7 @@ def test_process_request(
     assert state == 200
 
     # Test failing commit
-    mock_run_tests.return_value = False
+    mock_run_tests.return_value = (False, "")
     state = process_request(payload)
 
     mock_clone_repo.assert_any_call(
@@ -126,7 +126,7 @@ def test_process_request(
 
     # Build failing commit
     mock_build.return_value = False
-    mock_run_tests.return_value = True
+    mock_run_tests.return_value = (True, "")
     state = process_request(payload)
 
     mock_clone_repo.assert_any_call(
@@ -144,7 +144,7 @@ def test_process_request(
     # Clone failing commit
     mock_clone_repo.return_value = (False, None)
     mock_build.return_value = True
-    mock_run_tests.return_value = True
+    mock_run_tests.return_value = (True, "")
     state = process_request(payload)
 
     mock_clone_repo.assert_any_call(
@@ -285,11 +285,11 @@ def test_fail():
 def test_run_tests(setup_test_repo_success, setup_test_repo_failure):
     """Test run_tests()"""
     repo_path = setup_test_repo_success
-    result = run_tests(repo_path)
+    result, _ = run_tests(repo_path)
     assert result, "Expected run_tests() to return True when all tests pass"
 
     repo_path = setup_test_repo_failure
-    result = run_tests(repo_path)
+    result, _ = run_tests(repo_path)
     assert not result, "Expected run_tests() to return False due to a failing test"
 
 

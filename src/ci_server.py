@@ -107,7 +107,9 @@ def process_request(payload: dict) -> int:
             return 500
 
         # Try building and testing the repo
-        if build_project(repo_path) and run_tests(repo_path):
+        tests, testsOutput = run_tests(repo_path)
+
+        if build_project(repo_path) and tests:
             # Success if cloned and successfully built and tested
             update_github_status(status_url, "success", GITHUB_TOKEN)
             try:
@@ -118,6 +120,7 @@ def process_request(payload: dict) -> int:
                         commit_sha,
                         datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
                         "success",
+                        testsOutput,
                     )
             except sqlite3.Error as e:
                 print("Database error:", e)
@@ -134,6 +137,7 @@ def process_request(payload: dict) -> int:
                         commit_sha,
                         datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
                         "failure",
+                        testsOutput,
                     )
             except sqlite3.Error as e:
                 print("Database error:", e)
@@ -254,7 +258,7 @@ def build_project(path) -> bool:
         return False
 
 
-def run_tests(path: str) -> bool:
+def run_tests(path: str) -> tuple[bool, str]:
     """
     Runs all tests in the given repository path.
 
@@ -268,7 +272,7 @@ def run_tests(path: str) -> bool:
     """
     # Check if the path exists
     if not os.path.exists(path):
-        return False
+        return False, "Path does not exist."
 
     # Determine the virtual environment directory path
     venv_dir = os.path.join(path, ".venv")
@@ -284,7 +288,7 @@ def run_tests(path: str) -> bool:
     # Check if the python executable exists
     if not os.path.exists(python_executable):
         print(f"Error: Python executable not found at {python_executable}")
-        return False
+        return False, "Python executable not found."
 
     # Ensure pip is installed in the virtual environment
     subprocess.run(
@@ -321,7 +325,7 @@ def run_tests(path: str) -> bool:
             )
         except subprocess.CalledProcessError as e:
             print(f"Failed to install pytest:\n{e.stderr}")
-            return False
+            return False, "Failed to install pytest."
 
     # Run the tests using pytest
     test_command = [python_executable, "-m", "pytest"]
@@ -330,10 +334,11 @@ def run_tests(path: str) -> bool:
             test_command, cwd=path, check=True, capture_output=True, text=True
         )
         print(f"Tests passed!\n{result.stdout}")
-        return True
+        return (True, result.stdout)
     except subprocess.CalledProcessError as e:
         print(f"Tests failed:\n{e.stdout}\n{e.stderr}")
-        return False
+        error = e.stdout + e.stderr
+        return (False, error)
 
 
 def update_github_status(url: str, state: str, github_token: str) -> int:
@@ -362,6 +367,5 @@ def update_github_status(url: str, state: str, github_token: str) -> int:
 
 
 if __name__ == "__main__":
+    initialise_db()
     app.run(host="127.0.0.1", port=5000)
-    with app.app_context():
-        initialise_db()
