@@ -84,7 +84,7 @@ def process_request(payload: dict) -> int:
         else:
             # Failure if cloned but unsuccessfully built or tested
             update_github_status(status_url, "failure", GITHUB_TOKEN)
-            print("message", "Build and tests successful")
+            print("message", "Build/tests failed")
             return 200
 
     except Exception:
