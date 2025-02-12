@@ -5,8 +5,8 @@ import subprocess
 from dotenv import load_dotenv
 import os
 import shutil
-import sys
-from threading import Thread
+from redis import Redis
+from rq import Queue
 
 
 load_dotenv()
@@ -15,13 +15,14 @@ GITHUB_TOKEN = os.getenv("GITHUB_TOKEN")
 app = Flask(__name__)
 
 CLONE_DIR = "/tmp/"  # Temporary directory to clone the repo into
+job_queue = Queue(connection=Redis())
 
 
 @app.route("/webhook", methods=["POST"])
 def handle_webhook():
     """
     Recieves webhook requests and handles pings and invalid requests.
-    Valid requests are proceessed in a separate thread.
+    Each request is sent as a job to an rq queue.
 
     :return: Dictionary with a message responding to the request
     :return: Status code of the request
@@ -52,8 +53,8 @@ def handle_webhook():
 
     # Set as pending while processing
     update_github_status(status_url, "pending", GITHUB_TOKEN)
-    thread = Thread(target=process_request, args=(payload,))
-    thread.start()
+
+    job = job_queue.enqueue(process_request, payload)
     return {"message": "Processing started"}, 202
 
 
