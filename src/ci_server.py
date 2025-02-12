@@ -62,7 +62,7 @@ def handle_webhook():
         else:
             # Failure if cloned but unsuccessfully built or tested
             update_github_status(status_url, "failure", GITHUB_TOKEN)
-            return {"message": "Build and tests successful"}, 200
+            return {"message": "Build or tests failed"}, 200
 
     except Exception as e:
         # Error if exception is raised during processing
