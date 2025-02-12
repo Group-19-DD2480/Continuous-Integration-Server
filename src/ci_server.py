@@ -67,7 +67,7 @@ def handle_webhook():
         return {"error": f"Building/Testing error: {str(e)}"}, 500
 
 
-ef clone_repo(git_url: str, sha: str, repo_name: str) -> (bool, str):
+def clone_repo(git_url: str, sha: str, repo_name: str) -> (bool, str):
     """
     Clone the GitHub repository into the CLONE_DIR directory
 
