@@ -1,6 +1,6 @@
 import pytest
 import requests
-from unittest.mock import patch
+from unittest.mock import patch, call
 import sys
 import os
 import shutil
@@ -162,9 +162,11 @@ def test_clone_repo(mock_subprocess):
     success, _ = clone_repo(git_url=git_url, sha=sha, repo_name=repo_name)
 
     assert success is True, "Cloning repo failed"
-    mock_subprocess.assert_called_once_with(
-        ["git", "clone", git_url, f"/tmp/{repo_name}-{sha}"], check=True
-    )
+    expected_calls = [
+        call(["git", "clone", git_url, f"/tmp/{repo_name}-{sha}"], check=True),
+        call(["git", "checkout", sha], cwd=repo_path, check=True),
+    ]
+    mock_subprocess.assert_has_calls(expected_calls)
 
     if os.path.exists(repo_path):
         shutil.rmtree(repo_path, ignore_errors=True)
