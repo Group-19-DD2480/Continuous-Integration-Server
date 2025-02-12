@@ -6,6 +6,7 @@ from dotenv import load_dotenv
 import os
 import shutil
 import sys
+from threading import Thread
 
 
 load_dotenv()
@@ -34,7 +35,6 @@ def handle_webhook():
     payload = request.get_json()
 
     # Format the response url
-    clone_url = payload["repository"]["clone_url"]
     repo_owner = payload["repository"]["owner"]["login"]
     repo_name = payload["repository"]["name"]
     commit_sha = payload["after"]
@@ -44,28 +44,53 @@ def handle_webhook():
 
     # Set as pending while processing
     update_github_status(status_url, "pending", GITHUB_TOKEN)
+    thread = Thread(target=process_request, args=(payload,))
+    thread.start()
+    return {"message": "Processing started"}, 202
 
+
+def process_request(payload: dict) -> int:
+    """
+    Processes webhook push event request.
+
+    :param payload: The json payload of the request
+    :type payload: dict
+
+    :return: Status code of the request, 200 on success, 500 on fail
+    :rtype: int
+    """
+    clone_url = payload["repository"]["clone_url"]
+    repo_owner = payload["repository"]["owner"]["login"]
+    repo_name = payload["repository"]["name"]
+    commit_sha = payload["after"]
+    status_url = (
+        f"https://api.github.com/repos/{repo_owner}/{repo_name}/statuses/{commit_sha}"
+    )
+    print("\n\n\n", status_url, "\n\n\n")
     try:
         # Try cloning the repo
         cloned, repo_path = clone_repo(clone_url, commit_sha, repo_name)
         if not cloned:
             update_github_status(status_url, "error", GITHUB_TOKEN)
-            return {"error": "Cloning failed"}, 500
+            print("error", "Cloning failed")
+            return 500
 
         # Try building and testing the repo
         if build_project(repo_path) and run_tests(repo_path):
             # Success if cloned and successfully built and tested
             update_github_status(status_url, "success", GITHUB_TOKEN)
-            return {"message": "Build and tests successful"}, 200
+            print("message", "Build and tests successful")
+            return 200
         else:
             # Failure if cloned but unsuccessfully built or tested
             update_github_status(status_url, "failure", GITHUB_TOKEN)
-            return {"message": "Build and tests successful"}, 200
+            print("message", "Build and tests successful")
+            return 200
 
-    except Exception as e:
+    except Exception:
         # Error if exception is raised during processing
         update_github_status(status_url, "error", GITHUB_TOKEN)
-        return {"error": f"Building/Testing error: {str(e)}"}, 500
+        return 500
 
 
 def clone_repo(git_url: str, sha: str, repo_name: str) -> (bool, str):
