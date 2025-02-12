@@ -28,6 +28,39 @@ def client():
 def test_handle_webhook(
     mock_update_status, mock_run_tests, mock_build, mock_clone, client
 ):
+    # Invalid event
+    headers = {"X-GitHub-Event": "push", "Content-Type": "application/json"}
+
+    payload = {
+        "repository": {
+            "clone_url": "https://github.com/example/repo.git",
+            "owner": {"login": "example"},
+            "name": "repo",
+        },
+        "after": "abcd1234",
+    }
+
+    response = client.post("/webhook", data=json.dumps(payload), headers=headers)
+    assert response.status_code == 202
+
+    # Invalid event
+    headers = {"X-GitHub-Event": "pull_request", "Content-Type": "application/json"}
+    response = client.post("/webhook", data=json.dumps(payload), headers=headers)
+
+    assert response.status_code == 400
+
+    # Ping event
+    headers = {"X-GitHub-Event": "ping", "Content-Type": "application/json"}
+    response = client.post("/webhook", data=json.dumps(payload), headers=headers)
+
+    assert response.status_code == 200
+
+
+@patch("ci_server.clone_repo")
+@patch("ci_server.build_project")
+@patch("ci_server.run_tests")
+@patch("ci_server.update_github_status")
+def test_process_request(mock_update_status, mock_run_tests, mock_build, mock_clone):
     # Passing commit
     mock_clone.return_value = (True, "/repo/path")
     mock_build.return_value = True
@@ -42,15 +75,8 @@ def test_handle_webhook(
         "after": "abcd1234",
     }
 
-    headers = {"X-GitHub-Event": "push", "Content-Type": "application/json"}
+    state = process_request(payload)
 
-    response = client.post("/webhook", data=json.dumps(payload), headers=headers)
-
-    mock_update_status.assert_any_call(
-        "https://api.github.com/repos/example/repo/statuses/abcd1234",
-        "pending",
-        GITHUB_TOKEN,
-    )
     mock_clone.assert_any_call(
         "https://github.com/example/repo.git", "abcd1234", "repo"
     )
@@ -61,18 +87,12 @@ def test_handle_webhook(
         "success",
         GITHUB_TOKEN,
     )
-
-    assert response.status_code == 200
+    assert state == 200
 
     # Test failing commit
     mock_run_tests.return_value = False
-    response = client.post("/webhook", data=json.dumps(payload), headers=headers)
+    state = process_request(payload)
 
-    mock_update_status.assert_any_call(
-        "https://api.github.com/repos/example/repo/statuses/abcd1234",
-        "pending",
-        GITHUB_TOKEN,
-    )
     mock_clone.assert_any_call(
         "https://github.com/example/repo.git", "abcd1234", "repo"
     )
@@ -84,18 +104,13 @@ def test_handle_webhook(
         GITHUB_TOKEN,
     )
 
-    assert response.status_code == 200
+    assert state == 200
 
     # Build failing commit
     mock_build.return_value = False
     mock_run_tests.return_value = True
-    response = client.post("/webhook", data=json.dumps(payload), headers=headers)
+    state = process_request(payload)
 
-    mock_update_status.assert_any_call(
-        "https://api.github.com/repos/example/repo/statuses/abcd1234",
-        "pending",
-        GITHUB_TOKEN,
-    )
     mock_clone.assert_any_call(
         "https://github.com/example/repo.git", "abcd1234", "repo"
     )
@@ -106,19 +121,14 @@ def test_handle_webhook(
         GITHUB_TOKEN,
     )
 
-    assert response.status_code == 200
+    assert state == 200
 
     # Clone failing commit
     mock_clone.return_value = (False, None)
     mock_build.return_value = True
     mock_run_tests.return_value = True
-    response = client.post("/webhook", data=json.dumps(payload), headers=headers)
+    state = process_request(payload)
 
-    mock_update_status.assert_any_call(
-        "https://api.github.com/repos/example/repo/statuses/abcd1234",
-        "pending",
-        GITHUB_TOKEN,
-    )
     mock_clone.assert_any_call(
         "https://github.com/example/repo.git", "abcd1234", "repo"
     )
@@ -128,19 +138,7 @@ def test_handle_webhook(
         GITHUB_TOKEN,
     )
 
-    assert response.status_code == 500
-
-    # Invalid event
-    headers = {"X-GitHub-Event": "pull_request", "Content-Type": "application/json"}
-    response = client.post("/webhook", data=json.dumps(payload), headers=headers)
-
-    assert response.status_code == 400
-
-    # Ping event
-    headers = {"X-GitHub-Event": "ping", "Content-Type": "application/json"}
-    response = client.post("/webhook", data=json.dumps(payload), headers=headers)
-
-    assert response.status_code == 200
+    assert state == 500
 
 
 @patch("subprocess.run")
