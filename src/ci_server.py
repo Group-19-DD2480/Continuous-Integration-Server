@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, render_template
 import venv
 import requests
 import subprocess
@@ -8,6 +8,10 @@ import shutil
 import sys
 from threading import Thread
 
+import sqlite3
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../src")))
+from db import *
+import datetime
 
 load_dotenv()
 GITHUB_TOKEN = os.getenv("GITHUB_TOKEN")
@@ -15,6 +19,23 @@ GITHUB_TOKEN = os.getenv("GITHUB_TOKEN")
 app = Flask(__name__)
 
 CLONE_DIR = "/tmp/"  # Temporary directory to clone the repo into
+
+
+@app.route("/builds")
+def builds_view():
+    db = get_db()
+    builds = get_builds(db)
+    close_db()
+    return render_template('builds.html', builds=builds)
+
+@app.route("/build/<int:build_id>", methods=["GET"])
+def build_view(build_id):
+    db = get_db()
+    build = get_build(db, build_id)
+    close_db()
+    if build is None:
+        return {"error": "Build not found"}, 404
+    return render_template('build.html', build=build)
 
 
 @app.route("/webhook", methods=["POST"])
@@ -87,11 +108,21 @@ def process_request(payload: dict) -> int:
         if build_project(repo_path) and run_tests(repo_path):
             # Success if cloned and successfully built and tested
             update_github_status(status_url, "success", GITHUB_TOKEN)
+            try:
+                db_conn = get_db()
+                insert_build(db_conn, commit_sha, datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'), "success")
+            except sqlite3.Error as e:
+                print("Database error:", e)
             print("message", "Build and tests successful")
             return 200
         else:
             # Failure if cloned but unsuccessfully built or tested
             update_github_status(status_url, "failure", GITHUB_TOKEN)
+            try:
+                db_conn = get_db()
+                insert_build(db_conn, commit_sha, datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'), "failure")
+            except sqlite3.Error as e:
+                print("Database error:", e)
             print("message", "Build/tests failed")
             return 200
 
@@ -316,4 +347,5 @@ def update_github_status(url: str, state: str, github_token: str) -> int:
 
 
 if __name__ == "__main__":
+    initialise_db()
     app.run(host="127.0.0.1", port=5000)
