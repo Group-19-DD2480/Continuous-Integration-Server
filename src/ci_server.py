@@ -128,6 +128,7 @@ def clone_repo(git_url: str, sha: str, repo_name: str) -> (bool, str):
     try:
         # Run the git clone command
         subprocess.run(["git", "clone", git_url, repo_path], check=True)
+        subprocess.run(["git", "checkout", sha], cwd=repo_path, check=True)
         print(f"Repo cloned successfully into {repo_path}")
         return True, repo_path
     except subprocess.CalledProcessError as e:
