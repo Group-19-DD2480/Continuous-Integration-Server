@@ -95,6 +95,12 @@ chmod +x start.sh
 ```
 Press Ctrl+C to exit.
 
+### Connecting the Webhook
+To connect the webhook open your repo settings and go to the webhook section, click add webhook.  
+Set the payload URL to your domain slash webhook: https://example.com/webhook.  
+Set the content type to application/json.
+
+### Testing the Server
 The server can be tested by running `pytest` from the Continous-Integration-Server directory.
 ```bash
 pytest
