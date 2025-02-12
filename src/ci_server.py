@@ -18,6 +18,14 @@ CLONE_DIR = "/tmp/"  # Temporary directory to clone the repo into
 
 @app.route("/webhook", methods=["POST"])
 def handle_webhook():
+    """
+    Recieves webhook requests and handles pings and invalid requests.
+    Valid requests are proceessed in a separate thread.
+
+    :return: Dictionary with a message responding to the request
+    :return: Status code of the request
+    :rtype: (dict, int)
+    """
 
     event = request.headers.get("X-GitHub-Event", "")
     content_type = request.headers.get("Content-Type", "")
