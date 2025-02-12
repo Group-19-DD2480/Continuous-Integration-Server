@@ -23,6 +23,13 @@ source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
+### Add authtoken
+To update github statuses you need an authtoken, you can create a github personal access token at [github.com/settings/tokens](https://github.com/settings/tokens).
+
+Once you have an authtoken, create the following .env file in the Continuous-Integration-Server directory.
+```
+GITHUB_TOKEN=$YOUR_AUTHTOKEN
+```
 ### Install and Authenticate Ngrok
 The server is run locally, to make it accessible  to the internet you can use a tool like Ngrok.  
 Download and install Ngrok from [ngrok.com](https://ngrok.com/) or use following command:
