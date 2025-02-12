@@ -115,12 +115,14 @@ One obstacle to reach the next state is for the team to try to actively and expl
 
 # Contributions
 
-**Tore Stenberg (HermanKassler):**
+**Tore Stenberg ([HermanKassler](https://github.com/HermanKassler)):** Wrote functionality to compile and check the syntax of the code, and wrote the html documentation (while duplicating some stuff from the README)
 
-**Zarko Sesto (ErzaDuNord, Zarko Sesto):**
+**Zarko Sesto ([ErzaDuNord](https://github.com/ErzaDuNord)):** Wrote the handle_webhook and process_request functions and corresponding tests
 
-**Erik Smit (erikgsmit):**
+**Erik Smit ([erikgsmit](https://github.com/erikgsmit)):** Wrote clone_repo function and corresponding tests, worked on README.
 
-**Muhammad Usman (bitGatito):**
+**Muhammad Usman ([bitGatito](https://github.com/bitGatito)):** Wrote the run_tests function, build history functionality, and corresponding tests.
 
-**Ruben Socha (RubenSocha):**
+
+**Ruben Socha ([RubenSocha](https://github.com/RubenSocha)):** Worked on code skeleton, update_github_status, server hosting, installation and usage docs.
+
