@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>CI Server</title>
+    <style>
+        body {
+            margin: 20px;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>Build Details</h1>
+    {% if build %}
+    <div class="detail">
+        <span class="label">ID:</span> {{ build[0] }}
+    </div>
+    <div class="detail">
+        <span class="label">Commit Identifier:</span> {{ build[1] }}
+    </div>
+    <div class="detail">
+        <span class="label">Build Date:</span> {{ build[2] }}
+    </div>
+    <div class="detail">
+        <span class="label">Status:</span> {{ build[3] }}
+    </div>
+    <div class="detail">
+        <span class="label">Test Results:</span> {{ build[4] }}
+    </div>
+    {% else %}
+    <p>No build information available.</p>
+    {% endif %}
+</body>
+
+</html>

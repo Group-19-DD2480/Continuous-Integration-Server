@@ -27,7 +27,12 @@ def client():
 @patch("ci_server.run_tests")
 @patch("ci_server.update_github_status")
 def test_handle_webhook(
-    mock_update_status, mock_run_tests, mock_build, mock_clone, mock_process, client
+    mock_update_status,
+    mock_run_tests,
+    mock_build,
+    mock_clone_repo,
+    mock_process,
+    client,
 ):
     mock_process.return_value = 200
     # Invalid event
@@ -58,15 +63,26 @@ def test_handle_webhook(
     assert response.status_code == 200
 
 
+@patch("ci_server.get_db")
+@patch("ci_server.insert_build")
 @patch("ci_server.clone_repo")
 @patch("ci_server.build_project")
 @patch("ci_server.run_tests")
 @patch("ci_server.update_github_status")
-def test_process_request(mock_update_status, mock_run_tests, mock_build, mock_clone):
+def test_process_request(
+    mock_update_status,
+    mock_run_tests,
+    mock_build,
+    mock_clone_repo,
+    mock_insert_build,
+    mock_get_db,
+):
     # Passing commit
-    mock_clone.return_value = (True, "/repo/path")
+    mock_clone_repo.return_value = (True, "/repo/path")
     mock_build.return_value = True
-    mock_run_tests.return_value = True
+    mock_run_tests.return_value = (True, "")
+    mock_get_db.return_value = None
+    mock_insert_build.return_value = 1
 
     payload = {
         "repository": {
@@ -79,7 +95,7 @@ def test_process_request(mock_update_status, mock_run_tests, mock_build, mock_cl
 
     state = process_request(payload)
 
-    mock_clone.assert_any_call(
+    mock_clone_repo.assert_any_call(
         "https://github.com/example/repo.git", "abcd1234", "repo"
     )
     mock_build.assert_any_call("/repo/path")
@@ -92,10 +108,10 @@ def test_process_request(mock_update_status, mock_run_tests, mock_build, mock_cl
     assert state == 200
 
     # Test failing commit
-    mock_run_tests.return_value = False
+    mock_run_tests.return_value = (False, "")
     state = process_request(payload)
 
-    mock_clone.assert_any_call(
+    mock_clone_repo.assert_any_call(
         "https://github.com/example/repo.git", "abcd1234", "repo"
     )
     mock_build.assert_any_call("/repo/path")
@@ -110,10 +126,10 @@ def test_process_request(mock_update_status, mock_run_tests, mock_build, mock_cl
 
     # Build failing commit
     mock_build.return_value = False
-    mock_run_tests.return_value = True
+    mock_run_tests.return_value = (True, "")
     state = process_request(payload)
 
-    mock_clone.assert_any_call(
+    mock_clone_repo.assert_any_call(
         "https://github.com/example/repo.git", "abcd1234", "repo"
     )
     mock_build.assert_any_call("/repo/path")
@@ -126,12 +142,12 @@ def test_process_request(mock_update_status, mock_run_tests, mock_build, mock_cl
     assert state == 200
 
     # Clone failing commit
-    mock_clone.return_value = (False, None)
+    mock_clone_repo.return_value = (False, None)
     mock_build.return_value = True
-    mock_run_tests.return_value = True
+    mock_run_tests.return_value = (True, "")
     state = process_request(payload)
 
-    mock_clone.assert_any_call(
+    mock_clone_repo.assert_any_call(
         "https://github.com/example/repo.git", "abcd1234", "repo"
     )
     mock_update_status.assert_any_call(
@@ -269,11 +285,11 @@ def test_fail():
 def test_run_tests(setup_test_repo_success, setup_test_repo_failure):
     """Test run_tests()"""
     repo_path = setup_test_repo_success
-    result = run_tests(repo_path)
+    result, _ = run_tests(repo_path)
     assert result, "Expected run_tests() to return True when all tests pass"
 
     repo_path = setup_test_repo_failure
-    result = run_tests(repo_path)
+    result, _ = run_tests(repo_path)
     assert not result, "Expected run_tests() to return False due to a failing test"
 
 
