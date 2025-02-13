@@ -1,4 +1,5 @@
 # Continuous Integration Server
+
 This is a lightweight Continuous Integration (CI) server built using Flask. It listens for GitHub webhook events, clones repositories on push events, runs build and test processes, and updates the commit status on GitHub accordingly.
 
 # Table of Contents
@@ -10,30 +11,45 @@ This is a lightweight Continuous Integration (CI) server built using Flask. It l
 5. [Contributions](#contributions)
 
 # Installation
+
 ### Clone the Repository
+
 ```bash
 git clone https://github.com/Group-19-DD2480/Continuous-Integration-Server.git
 ```
+
 ### Set up a Virtual Environment
+
+The project was built and tested with python3 version 3.13.1, lower versions may work aswell but are untested.
+
 ```bash
 python3 -m venv .venv
 source .venv/bin/activate
 ```
+
 ### Install Dependencies
+
+The project was built and tested with pip version 24.3.1 lower versions may work aswell but are untested.
+
 ```bash
 pip install -r requirements.txt
 ```
 
 ### Add authtoken
+
 To update github statuses you need an authtoken, you can create a github personal access token at [github.com/settings/tokens](https://github.com/settings/tokens).
 
 Once you have an authtoken, create the following .env file in the Continuous-Integration-Server directory.
+
 ```
 GITHUB_TOKEN=$YOUR_AUTHTOKEN
 ```
+
 ### Install and Authenticate Ngrok
-The server is run locally, to make it accessible  to the internet you can use a tool like Ngrok.  
+
+The server is run locally, to make it accessible to the internet you can use a tool like Ngrok.  
 Download and install Ngrok from [ngrok.com](https://ngrok.com/) or use following command:
+
 ```bash
 curl -sSL https://ngrok-agent.s3.amazonaws.com/ngrok.asc \
   | sudo tee /etc/apt/trusted.gpg.d/ngrok.asc >/dev/null \
@@ -42,24 +58,34 @@ curl -sSL https://ngrok-agent.s3.amazonaws.com/ngrok.asc \
   && sudo apt update \
   && sudo apt install ngrok
 ```
+
 Without an account, the session expires after two hours. To keep the server running, make a free Ngrok account at [ngrok.com](https://ngrok.com/)  
 Once you have an account, get your authtoken from the [dashboard](https://dashboard.ngrok.com/get-started/your-authtoken).  
 Authenticate Ngrok with the following command:
+
 ```bash
 ngrok config add-authtoken $YOUR_AUTHTOKEN
 ```
-Ngrok generates a unique URL each time it is run, with an Ngrok account you can get a static domain from the [dashboard](https://dashboard.ngrok.com/domains). 
+
+Ngrok generates a unique URL each time it is run, with an Ngrok account you can get a static domain from the [dashboard](https://dashboard.ngrok.com/domains).
+
 # Running the Server<a name='running-the-server'></a>
+
 Start the CI server by running ci_server.py
+
 ```bash
 python3 src/ci_server.py
 ```
+
 The server uses the default Flask port 5000.
 Run Ngrok on port 5000:
+
 ```bash
 ngrok http --url=$YOUR_DOMAIN 5000
 ```
+
 For easier startup and shutdown, the server can be run using the following startup script:
+
 ```bash
 #!/bin/bash
 
@@ -88,20 +114,26 @@ trap cleanup SIGINT SIGTERM
 # Wait for both processes to finish
 wait
 ```
+
 Run the startup script:
+
 ```bash
 chmod +x start.sh
-./start.sh 
+./start.sh
 ```
+
 Press Ctrl+C to exit.
 
 ### Connecting the Webhook
+
 To connect the webhook open your repo settings and go to the webhook section, click add webhook.  
 Set the payload URL to your domain slash webhook: https://example.com/webhook.  
 Set the content type to application/json.
 
 ### Testing the Server
+
 The server can be tested by running `pytest` from the Continous-Integration-Server directory.
+
 ```bash
 pytest
 ```
@@ -129,6 +161,4 @@ One obstacle to reach the next state is for the team to try to actively and expl
 
 **Muhammad Usman ([bitGatito](https://github.com/bitGatito)):** Wrote the run_tests function, build history functionality, and corresponding tests.
 
-
 **Ruben Socha ([RubenSocha](https://github.com/RubenSocha)):** Worked on code skeleton, update_github_status, server hosting, installation and usage docs.
-
