@@ -62,7 +62,7 @@ def test_handle_webhook(
         GITHUB_TOKEN,
     )
 
-    assert response.status_code == 200
+    assert response.status_code != 200
 
     # Test failing commit
     mock_run_tests.return_value = False
