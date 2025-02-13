@@ -106,6 +106,10 @@ The server can be tested by running `pytest` from the Continous-Integration-Serv
 pytest
 ```
 
+# Build Log
+
+[Build Log](https://measured-bluejay-partly.ngrok-free.app/builds)
+
 # SEMAT
 
 At the moment we are in the “Collaborating” state since we have not met all of the requirements listed in the “Performing” state. The following is an overview of our updated checklist for the “Performing” state:
