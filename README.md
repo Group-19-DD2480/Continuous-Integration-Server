@@ -20,7 +20,7 @@ git clone https://github.com/Group-19-DD2480/Continuous-Integration-Server.git
 
 ### Set up a Virtual Environment
 
-The project was built and tested with python3 version 3.13.1, lower versions may work aswell but are untested.
+The project was built and tested with python3 version 3.12.6 and up, lower versions may work aswell but are untested.
 
 ```bash
 python3 -m venv .venv
