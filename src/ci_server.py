@@ -5,8 +5,8 @@ import subprocess
 from dotenv import load_dotenv
 import os
 import shutil
-import sys
 from threading import Thread
+import sys
 
 import sqlite3
 
@@ -20,6 +20,11 @@ GITHUB_TOKEN = os.getenv("GITHUB_TOKEN")
 app = Flask(__name__)
 
 CLONE_DIR = "/tmp/"  # Temporary directory to clone the repo into
+
+
+@app.route("/documentation")
+def documentation_view():
+    return render_template("../docs/html/index.html")
 
 
 @app.route("/builds")
@@ -155,13 +160,16 @@ def clone_repo(git_url: str, sha: str, repo_name: str) -> (bool, str):
     """
     Clone the GitHub repository into the CLONE_DIR directory
 
-    Parameters:
-        git_url (str): The URL of the GitHub repository to clone
-        sha (str): The commit SHA to checkout after cloning
-        repo_name (str): The name of the repository
-    Returns:
-        bool: True if the repository was cloned successfully, False otherwise
-        str: The path to the cloned repository
+    :param git_url: The URL of the GitHub repository to clone
+    :type git_url: str
+    :param sha: The commit SHA to checkout after cloning
+    :type sha: str
+    :param repo_name: The name of the repository
+    :type repo_name: str
+
+    :return: True if the repository was cloned successfully, False otherwise
+    :return: The path to the cloned repository
+    :rtype: (bool, str)
     """
     # Ensure that the clone directory does not exist already
     repo_path = os.path.join(CLONE_DIR, f"{repo_name}-{sha}")
@@ -186,14 +194,14 @@ def clone_repo(git_url: str, sha: str, repo_name: str) -> (bool, str):
         return False, repo_path
 
 
-def build_project(path) -> bool:
+def build_project(path: str) -> bool:
     """
     Fetches all python files in the directory given by path and runs a compile check on it. Return true if the check succeeds.
-    Parameters:
-        path: String representing the path to the directory to be compiled.
-              An empty directory is considered a valid path and program (returns True)
-    Returns:
-        bool: True if all python files within the path compile without errors.
+
+    :param path: String representing the path to the directory to be compiled.
+                An empty directory is considered a valid path and program (returns True)
+    :type path: str
+    :returns: True if all python files within the path compile without errors.
               False if any file compile with an error, path is not directory or the path does not exist.
     """
 
@@ -264,11 +272,11 @@ def run_tests(path: str) -> tuple[bool, str]:
 
     - Using pytest
 
-    Parameters:
-        path (str): Path to the cloned repository.
+    :param path: Path to the cloned repository.
+    :type path: str
 
-    Returns:
-        bool: True if all tests pass, False otherwise.
+    :returns: True if all tests pass, False otherwise.
+    :rtype: bool
     """
     # Check if the path exists
     if not os.path.exists(path):
