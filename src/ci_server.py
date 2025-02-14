@@ -144,6 +144,7 @@ def process_request(payload: dict) -> int:
                         "failure",
                         testsOutput,
                     )
+            except sqlite3.Error as e:
                 print("Database error:", e)
             print("message", "Build/tests failed")
             return 200
